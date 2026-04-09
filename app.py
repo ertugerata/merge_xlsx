@@ -5,11 +5,10 @@ import os
 
 # Ayarlar
 path = './'  # Dosyaların olduğu klasör
-files = glob.glob(os.path.join(path, "*.xlsx")) # .xlsx dosyaları için
+files = glob.glob(os.path.join(path, "*.xlsx")) 
 output_file = "birlesmis_temiz_liste.xlsx"
 
-# Standart Excel sarı dolgu rengi kodu genellikle 'FFFFFF00' veya 'FFFF00'dır.
-# Bazı durumlarda tema renkleri farklılık gösterebilir.
+# Standart Excel sarı dolgu rengi kodları
 YELLOW_COLORS = ['FFFFFF00', 'FFFF00'] 
 
 all_data = []
@@ -17,27 +16,31 @@ header = None
 
 for f in files:
     print(f"{f} işleniyor...")
-    # Dosyayı openpyxl ile aç (data_only=True formül yerine sonucu okur)
     wb = openpyxl.load_workbook(f, data_only=True)
-    ws = wb.active # İlk sekmeyi seçer
+    ws = wb.active 
 
-    # Başlığı belirle (Sadece ilk dosyadan veya her dosyanın ilk satırı aynı olduğu için)
     current_file_rows = list(ws.rows)
     if not current_file_rows:
         continue
 
+    # Başlığı al (Sadece ilk dosyadan)
     if header is None:
-        header = [cell.value for cell in current_file_rows[0]]
+        # None olmayan hücreleri filtreleyerek gerçek başlık sayısını bulabilirsiniz
+        # veya manuel olarak header = header[:10] diyebilirsiniz.
+        header = [cell.value for cell in current_file_rows[0] if cell.value is not None]
+    
+    # Başlık sayısını referans alarak verileri oku
+    column_count = len(header)
 
-    # 2. satırdan itibaren (başlık hariç) verileri kontrol et
+    # 2. satırdan itibaren verileri kontrol et
     for row in ws.iter_rows(min_row=2):
         # Satırın ilk hücresinin dolgu rengini kontrol et 
-        # (Eğer tüm satır boyalıysa ilk hücreye bakmak yeterlidir)
         fill_color = row[0].fill.start_color.rgb
         
         # Eğer renk sarı değilse listeye ekle
         if fill_color not in YELLOW_COLORS:
-            row_values = [cell.value for cell in row]
+            # SADECE başlık sayısı kadar hücreyi al (Hatanın çözümü burası)
+            row_values = [cell.value for cell in row[:column_count]]
             all_data.append(row_values)
 
 # DataFrame oluştur ve kaydet
