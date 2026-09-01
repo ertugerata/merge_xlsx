@@ -13,6 +13,7 @@ YELLOW_COLORS = ['FFFFFF00', 'FFFF00']
 
 all_data = []
 header = None
+target_column_count = 10  # Her dosyadan hedeflenen sütun sayısı
 
 for f in files:
     # Çıktı dosyasının kendisini işlememesi için kontrol
@@ -27,12 +28,15 @@ for f in files:
     if not current_file_rows:
         continue
 
-    # Her zaman ilk 10 sütunu hedefle
-    target_column_count = 10
-
     # Başlığı belirle (Sadece ilk dosyadan, ilk 10 sütun)
+    # NOT: İlk dosyanın satırı 10 hücreden KISA olabilir (ör. 7 hücre).
+    # Bu durumda slicing [:10] sadece var olan 7 hücreyi döner ve
+    # header 10 uzunluğunda garanti edilmez. Bu yüzden eksikse None ile
+    # 10 elemana tamamlıyoruz.
     if header is None:
         header = [cell.value for cell in current_file_rows[0][:target_column_count]]
+        if len(header) < target_column_count:
+            header += [None] * (target_column_count - len(header))
 
     # 2. satırdan itibaren verileri kontrol et
     for row in ws.iter_rows(min_row=2):
@@ -43,6 +47,10 @@ for f in files:
         if fill_color not in YELLOW_COLORS:
             # Sütun sayısı ne olursa olsun sadece ilk 10 hücreyi al
             row_values = [cell.value for cell in row[:target_column_count]]
+            # Bu dosyanın satırı 10 hücreden kısaysa (az sütunlu dosya),
+            # aynı şekilde 10'a tamamla ki header ile boyutu eşleşsin
+            if len(row_values) < target_column_count:
+                row_values += [None] * (target_column_count - len(row_values))
             all_data.append(row_values)
 
 # DataFrame oluştur
